@@ -3,7 +3,6 @@
 use hayro_syntax::object::MaybeRef::NotRef;
 use hayro_syntax::object::MaybeRef::Ref;
 use hayro_syntax::object::Object;
-use hayro_syntax::object::ObjectIdentifier;
 use hayro_syntax::object::dict::keys::HEIGHT;
 use hayro_syntax::object::dict::keys::WIDTH;
 use hayro_syntax::object::stream::ImageDecodeParams;
@@ -19,18 +18,9 @@ fn main() {
     for page in pages.iter() {
         let resources = page.resources();
         let xobjects = &resources.x_objects;
-        for (name, maybe_ref) in xobjects.entries() {
+        for (_name, maybe_ref) in xobjects.entries() {
             let obj = match maybe_ref {
-                Ref(obj_ref) => {
-                    let obj = pdf
-                        .xref()
-                        .get(ObjectIdentifier {
-                            obj_number: obj_ref.obj_number,
-                            gen_number: obj_ref.gen_number,
-                        })
-                        .unwrap();
-                    obj
-                }
+                Ref(obj_ref) => pdf.xref().get(obj_ref.into()).unwrap(),
                 NotRef(b) => b,
             };
             let Object::Stream(s) = obj else {
@@ -41,28 +31,19 @@ fn main() {
             let mut height = None;
             for (stream_name, stream_maybe_ref) in s.dict().entries() {
                 let obj = match stream_maybe_ref {
-                    Ref(obj_ref) => {
-                        let obj = pdf
-                            .xref()
-                            .get(ObjectIdentifier {
-                                obj_number: obj_ref.obj_number,
-                                gen_number: obj_ref.gen_number,
-                            })
-                            .unwrap();
-                        obj
-                    }
+                    Ref(obj_ref) => pdf.xref().get(obj_ref.into()).unwrap(),
                     NotRef(b) => b,
                 };
                 eprintln!("name {:?} obj {:?}", stream_name, obj);
                 if stream_name.as_ref() == WIDTH
                     && let Object::Number(n) = obj
                 {
-                    width = Some(n.as_f64() as u32)
+                    width = Some(n.as_f64() as u32);
                 }
                 if stream_name.as_ref() == HEIGHT
                     && let Object::Number(n) = obj
                 {
-                    height = Some(n.as_f64() as u32)
+                    height = Some(n.as_f64() as u32);
                 }
             }
             let Some(width) = width else {

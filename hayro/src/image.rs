@@ -370,11 +370,11 @@ impl Renderer<'_> {
 
             let mut out = Vec::with_capacity((img_width * img_height) as usize * 4);
             if let Some(alpha) = resized_alpha {
-                for (px, a) in resized.chunks_exact(3).zip(alpha) {
+                for (px, a) in resized.as_chunks::<3>().0.iter().zip(alpha) {
                     out.extend_from_slice(&[px[0], px[1], px[2], a]);
                 }
             } else {
-                for px in resized.chunks_exact(3) {
+                for px in resized.as_chunks::<3>().0 {
                     out.extend_from_slice(&[px[0], px[1], px[2], 255]);
                 }
             }
@@ -402,11 +402,15 @@ impl Renderer<'_> {
 
             let mut rgba_data = match alpha_data {
                 None => rgb_data
-                    .chunks_exact(3)
+                    .as_chunks::<3>()
+                    .0
+                    .iter()
                     .flat_map(|rgb| [rgb[0], rgb[1], rgb[2], 255])
                     .collect::<Vec<_>>(),
                 Some(alpha) => rgb_data
-                    .chunks_exact(3)
+                    .as_chunks::<3>()
+                    .0
+                    .iter()
                     .zip(alpha)
                     .flat_map(|(rgb, a)| [rgb[0], rgb[1], rgb[2], a])
                     .collect::<Vec<_>>(),
@@ -661,7 +665,7 @@ fn premultiply_rgba(level: Level, data: &mut [u8]) {
             -1, 0, 0, 0, -1,
         ]
         .simd_into(simd);
-        for chunk in data.chunks_exact_mut(32) {
+        for chunk in data.as_chunks_mut::<32>().0 {
             let rgba = u8x32::from_slice(simd, chunk);
             let alphas = rgba.splat_4th();
             let (rgba_low, rgba_high) = simd.widen_u8x32(rgba);
@@ -676,7 +680,7 @@ fn premultiply_rgba(level: Level, data: &mut [u8]) {
 
     fearless_simd::dispatch!(level, simd => premultiply_rgba_simd(simd, simd_data));
 
-    for pixel in tail.chunks_exact_mut(4) {
+    for pixel in tail.as_chunks_mut::<4>().0 {
         let alpha = u16::from(pixel[3]);
         pixel[0] = div_255(u16::from(pixel[0]) * alpha) as u8;
         pixel[1] = div_255(u16::from(pixel[1]) * alpha) as u8;

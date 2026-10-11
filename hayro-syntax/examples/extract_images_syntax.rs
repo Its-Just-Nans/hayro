@@ -8,11 +8,11 @@ use hayro_syntax::object::Name;
 use hayro_syntax::object::Object;
 use hayro_syntax::object::dict::keys::BITS_PER_COMPONENT;
 use hayro_syntax::object::dict::keys::BPC;
+use hayro_syntax::object::dict::keys::H;
 use hayro_syntax::object::dict::keys::HEIGHT;
 use hayro_syntax::object::dict::keys::IMAGE;
 use hayro_syntax::object::dict::keys::SUBTYPE;
 use hayro_syntax::object::dict::keys::W;
-use hayro_syntax::object::dict::keys::H;
 use hayro_syntax::object::dict::keys::WIDTH;
 use hayro_syntax::object::stream::ImageDecodeParams;
 
@@ -46,8 +46,14 @@ fn main() {
             let bpc = dict
                 .get::<u8>(BPC)
                 .or_else(|| dict.get::<u8>(BITS_PER_COMPONENT));
-            let width = dict.get::<u32>(W).or_else(|| dict.get::<u32>(WIDTH)).unwrap();
-            let height = dict.get::<u32>(H).or_else(|| dict.get::<u32>(HEIGHT)).unwrap();
+            let width = dict
+                .get::<u32>(W)
+                .or_else(|| dict.get::<u32>(WIDTH))
+                .unwrap();
+            let height = dict
+                .get::<u32>(H)
+                .or_else(|| dict.get::<u32>(HEIGHT))
+                .unwrap();
             let image_params = ImageDecodeParams {
                 bpc,
                 width,

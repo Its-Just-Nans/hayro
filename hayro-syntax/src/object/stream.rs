@@ -5,6 +5,12 @@ use crate::filter::Filter;
 use crate::object;
 use crate::object::Dict;
 use crate::object::Name;
+use crate::object::dict::keys::BITS_PER_COMPONENT;
+use crate::object::dict::keys::BPC;
+use crate::object::dict::keys::H;
+use crate::object::dict::keys::HEIGHT;
+use crate::object::dict::keys::W;
+use crate::object::dict::keys::WIDTH;
 use crate::object::dict::keys::{DECODE_PARMS, DP, F, FILTER, LENGTH, TYPE};
 use crate::object::{Array, ObjectIdentifier};
 use crate::object::{Object, ObjectLike, ObjectRefLike};
@@ -163,6 +169,29 @@ impl<'a> Stream<'a> {
     pub fn decoded(&self) -> Result<Cow<'a, [u8]>, DecodeFailure> {
         self.decoded_image(&ImageDecodeParams::default())
             .map(|r| r.data)
+    }
+
+    /// Get image decode params
+    pub fn get_image_decode_params(
+        &self,
+        target_dimension: Option<(u32, u32)>,
+        is_indexed: bool,
+        num_components: Option<u8>,
+    ) -> Option<ImageDecodeParams> {
+        let dict = self.dict();
+        let bpc = dict
+            .get::<u8>(BPC)
+            .or_else(|| dict.get::<u8>(BITS_PER_COMPONENT));
+        let width = dict.get::<u32>(W).or_else(|| dict.get::<u32>(WIDTH))?;
+        let height = dict.get::<u32>(H).or_else(|| dict.get::<u32>(HEIGHT))?;
+        Some(ImageDecodeParams {
+            is_indexed,
+            height,
+            width,
+            bpc,
+            num_components,
+            target_dimension,
+        })
     }
 
     /// Return the decoded data of the stream, and return image metadata

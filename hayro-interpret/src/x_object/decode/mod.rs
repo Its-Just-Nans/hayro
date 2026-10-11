@@ -11,7 +11,7 @@ use crate::x_object::image::{ImageKind, ImageXObject};
 use hayro_syntax::bit_reader::BitReader;
 use hayro_syntax::object::Array;
 use hayro_syntax::object::dict::keys::*;
-use hayro_syntax::object::stream::{FilterResult, ImageColorSpace, ImageDecodeParams};
+use hayro_syntax::object::stream::{FilterResult, ImageColorSpace};
 use smallvec::SmallVec;
 use std::iter;
 
@@ -29,21 +29,13 @@ fn decode_context<'a>(
     obj: &ImageXObject<'a>,
     target_dimension: Option<(u32, u32)>,
 ) -> Option<DecodeContext<'a>> {
-    let dict = obj.stream.dict();
-    let dict_bpc = dict
-        .get::<u8>(BPC)
-        .or_else(|| dict.get::<u8>(BITS_PER_COMPONENT));
     let color_space = obj.color_space.clone();
     let is_indexed = obj.color_space.as_ref().is_some_and(|cs| cs.is_indexed());
+    let num_components = obj.color_space.as_ref().map(|c| c.num_components());
 
-    let decode_params = ImageDecodeParams {
-        is_indexed,
-        bpc: dict_bpc,
-        num_components: color_space.as_ref().map(|c| c.num_components()),
-        target_dimension,
-        width: obj.width,
-        height: obj.height,
-    };
+    let decode_params =
+        obj.stream()
+            .get_image_decode_params(target_dimension, is_indexed, num_components)?;
 
     let decoded = obj
         .stream
@@ -91,9 +83,10 @@ fn decode_context<'a>(
         .image_data
         .as_ref()
         .map(|i| i.bits_per_component)
-        .or(dict_bpc)
+        .or(decode_params.bpc)
         .unwrap_or(fallback_bpc);
 
+    let dict = obj.stream.dict();
     let decode_arr = dict
         .get::<Array<'_>>(D)
         .or_else(|| dict.get::<Array<'_>>(DECODE))

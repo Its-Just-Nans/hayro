@@ -415,7 +415,7 @@ fn apply_sign_shift(channel_data: &mut [ComponentData], component_infos: &[Compo
         let offset = (1_u32 << (component_info.size_info.precision - 1)) as f32;
         dispatch!(Level::new(), simd => {
             let offset_v = f32x8::splat(simd, offset);
-            for chunk in channel.container.chunks_exact_mut(8) {
+            for chunk in channel.container.as_chunks_mut::<8>().0 {
                 let v = f32x8::from_slice(simd, chunk);
                 (v + offset_v).store(chunk);
             }

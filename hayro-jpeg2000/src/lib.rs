@@ -230,7 +230,7 @@ impl<'a> Image<'a> {
                         }),
                 )
                 .collect::<Vec<_>>();
-            components.sort_by(|c1, c2| c1.1.cmp(&c2.1));
+            components.sort_by_key(|c1| c1.1);
             *decoded_image.decoded_components = components.into_iter().map(|c| c.0).collect();
         }
 
@@ -700,9 +700,11 @@ fn cielab_to_rgb<S: Simd>(
     // We leave applying the ICC profile to the user.
     for ((l_chunk, a_chunk), b_chunk) in l
         .container
-        .chunks_exact_mut(SIMD_WIDTH)
-        .zip(a.container.chunks_exact_mut(SIMD_WIDTH))
-        .zip(b.container.chunks_exact_mut(SIMD_WIDTH))
+        .as_chunks_mut::<SIMD_WIDTH>()
+        .0
+        .iter_mut()
+        .zip(a.container.as_chunks_mut::<SIMD_WIDTH>().0)
+        .zip(b.container.as_chunks_mut::<SIMD_WIDTH>().0)
     {
         let l_v = f32x8::from_slice(simd, l_chunk);
         let a_v = f32x8::from_slice(simd, a_chunk);
@@ -725,11 +727,11 @@ fn ycck_to_cmyk<S: Simd>(simd: S, components: &mut [ComponentData], bit_depth: u
     let max_v = f32x8::splat(simd, max_value);
 
     for component in components.iter_mut().take(3) {
-        let mut chunks = component.container.chunks_exact_mut(SIMD_WIDTH);
-        for chunk in chunks.by_ref() {
+        let (chunks, remainder) = component.container.as_chunks_mut::<SIMD_WIDTH>();
+        for chunk in chunks {
             (max_v - f32x8::from_slice(simd, chunk)).store(chunk);
         }
-        for value in chunks.into_remainder() {
+        for value in remainder {
             *value = max_value - *value;
         }
     }
@@ -759,9 +761,11 @@ fn sycc_to_rgb<S: Simd>(simd: S, components: &mut [ComponentData], bit_depth: u8
 
     for ((y_chunk, cb_chunk), cr_chunk) in y
         .container
-        .chunks_exact_mut(SIMD_WIDTH)
-        .zip(cb.container.chunks_exact_mut(SIMD_WIDTH))
-        .zip(cr.container.chunks_exact_mut(SIMD_WIDTH))
+        .as_chunks_mut::<SIMD_WIDTH>()
+        .0
+        .iter_mut()
+        .zip(cb.container.as_chunks_mut::<SIMD_WIDTH>().0)
+        .zip(cr.container.as_chunks_mut::<SIMD_WIDTH>().0)
     {
         let y_v = f32x8::from_slice(simd, y_chunk);
         let cb_v = f32x8::from_slice(simd, cb_chunk) - offset_v;

@@ -237,15 +237,17 @@ fn convert_inner(image: &Image<'_>, buf: &mut [u8]) -> ImageResult<()> {
                 let mut cmyk = vec![];
                 let mut alpha = vec![];
 
-                for sample in decoded.chunks_exact(5) {
+                for sample in decoded.as_chunks::<5>().0 {
                     cmyk.extend_from_slice(&sample[..4]);
                     alpha.push(sample[4]);
                 }
 
                 let rgb = from_icc(CMYK_PROFILE, 4, false, width, height, &cmyk)
                     .map_err(icc_err_to_image)?;
-                for (out, pixel) in buf.chunks_exact_mut(4).zip(
-                    rgb.chunks_exact(3)
+                for (out, pixel) in buf.as_chunks_mut::<4>().0.iter_mut().zip(
+                    rgb.as_chunks::<3>()
+                        .0
+                        .iter()
                         .zip(alpha)
                         .map(|(rgb, alpha)| [rgb[0], rgb[1], rgb[2], alpha]),
                 ) {

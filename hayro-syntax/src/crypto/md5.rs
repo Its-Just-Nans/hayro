@@ -39,7 +39,9 @@ pub(crate) fn calculate(data: &[u8]) -> [u8; 16] {
 
     for chunk in message.chunks_exact(64) {
         let words: Vec<u32> = chunk
-            .as_chunks::<4>().0.iter()
+            .as_chunks::<4>()
+            .0
+            .iter()
             .map(|bytes| u32::from_le_bytes(*bytes))
             .collect();
 

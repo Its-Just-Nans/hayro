@@ -49,12 +49,12 @@ fn decode_context<'a>(
         .image_data
         .as_ref()
         .map(|d| {
-            scale_x = obj.width as f32 / d.width as f32;
-            scale_y = obj.height as f32 / d.height as f32;
+            scale_x = obj.width() as f32 / d.width as f32;
+            scale_y = obj.height() as f32 / d.height as f32;
 
             (d.width, d.height)
         })
-        .unwrap_or((obj.width, obj.height));
+        .unwrap_or((obj.width(), obj.height()));
 
     let color_space = color_space
         .or_else(|| {

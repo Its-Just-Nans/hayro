@@ -144,7 +144,7 @@ pub struct Image<'a> {
     /// The codestream containing the data to decode.
     pub(crate) codestream: &'a [u8],
     /// The header of the J2C codestream.
-    pub(crate) header: Header<'a>,
+    pub(crate) header: Header,
     /// The JP2 boxes of the image. In the case of a raw codestream, we
     /// will synthesize the necessary boxes.
     pub(crate) boxes: ImageBoxes,
@@ -244,7 +244,7 @@ impl<'a> Image<'a> {
 
 pub(crate) fn resolve_alpha_and_color_space(
     boxes: &ImageBoxes,
-    header: &Header<'_>,
+    header: &Header,
     settings: &DecodeSettings,
 ) -> Result<(ColorSpace, bool)> {
     let mut num_components = header.component_infos.len();
@@ -299,7 +299,10 @@ pub(crate) fn resolve_alpha_and_color_space(
                     color_space = ColorSpace::CMYK;
                 }
             } else {
-                bail!(ValidationError::TooManyChannels);
+                color_space = ColorSpace::Unknown {
+                    num_channels: u8::try_from(actual_num_components - usize::from(has_alpha))
+                        .map_err(|_| ValidationError::TooManyChannels)?,
+                };
             }
         }
     }
@@ -565,7 +568,8 @@ fn get_color_space(boxes: &ImageBoxes, num_components: usize) -> Result<ColorSpa
             3 => ColorSpace::RGB,
             4 => ColorSpace::CMYK,
             _ => ColorSpace::Unknown {
-                num_channels: num_components as u8,
+                num_channels: u8::try_from(num_components)
+                    .map_err(|_| ValidationError::TooManyChannels)?,
             },
         },
     };

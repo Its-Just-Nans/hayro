@@ -13,8 +13,8 @@ use kurbo::Affine;
 
 #[derive(Clone)]
 pub(crate) struct ImageXObject<'a> {
-    pub(crate) width: u32,
-    pub(crate) height: u32,
+    width: u32,
+    height: u32,
     pub(crate) color_space: Option<ColorSpace>,
     pub(crate) cache: Cache,
     pub(crate) interpolate: bool,

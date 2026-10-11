@@ -1,9 +1,18 @@
 //! Extract images from PDF
 
+use std::ops::Deref;
+
 use hayro_syntax::object::MaybeRef::NotRef;
 use hayro_syntax::object::MaybeRef::Ref;
+use hayro_syntax::object::Name;
 use hayro_syntax::object::Object;
+use hayro_syntax::object::dict::keys::BITS_PER_COMPONENT;
+use hayro_syntax::object::dict::keys::BPC;
 use hayro_syntax::object::dict::keys::HEIGHT;
+use hayro_syntax::object::dict::keys::IMAGE;
+use hayro_syntax::object::dict::keys::SUBTYPE;
+use hayro_syntax::object::dict::keys::W;
+use hayro_syntax::object::dict::keys::H;
 use hayro_syntax::object::dict::keys::WIDTH;
 use hayro_syntax::object::stream::ImageDecodeParams;
 
@@ -26,33 +35,21 @@ fn main() {
             let Object::Stream(s) = obj else {
                 continue;
             };
-            eprintln!("stream {:?}", s.dict());
-            let mut width = None;
-            let mut height = None;
-            for (stream_name, stream_maybe_ref) in s.dict().entries() {
-                let obj = match stream_maybe_ref {
-                    Ref(obj_ref) => pdf.xref().get(obj_ref.into()).unwrap(),
-                    NotRef(b) => b,
-                };
-                eprintln!("name {:?} obj {:?}", stream_name, obj);
-                if stream_name.as_ref() == WIDTH
-                    && let Object::Number(n) = obj
-                {
-                    width = Some(n.as_f64() as u32);
-                }
-                if stream_name.as_ref() == HEIGHT
-                    && let Object::Number(n) = obj
-                {
-                    height = Some(n.as_f64() as u32);
-                }
+            let Some(subtype) = s.dict().get::<Name<'_>>(SUBTYPE) else {
+                continue;
+            };
+            if subtype.deref() != IMAGE {
+                continue;
             }
-            let Some(width) = width else {
-                continue;
-            };
-            let Some(height) = height else {
-                continue;
-            };
+
+            let dict = s.dict();
+            let bpc = dict
+                .get::<u8>(BPC)
+                .or_else(|| dict.get::<u8>(BITS_PER_COMPONENT));
+            let width = dict.get::<u32>(W).or_else(|| dict.get::<u32>(WIDTH)).unwrap();
+            let height = dict.get::<u32>(H).or_else(|| dict.get::<u32>(HEIGHT)).unwrap();
             let image_params = ImageDecodeParams {
+                bpc,
                 width,
                 height,
                 ..Default::default()

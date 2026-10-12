@@ -42,7 +42,7 @@ pub(crate) fn decode(
     // the data as 8-bit instead of 1-bit, so that it can be easier converted
     // into an RGBA8 image.
 
-    let (decoded, bpc) = if image_params.is_indexed {
+    let (decoded, bpc, decoded_rows) = if image_params.is_indexed {
         struct BitPackDecoder {
             output: Vec<u8>,
             stride: usize,
@@ -125,7 +125,7 @@ pub(crate) fn decode(
 
         decoder.output.truncate(decoder.row_start);
 
-        (decoder.output, 1)
+        (decoder.output, 1, decoder.decoded_rows)
     } else {
         struct Luma8Decoder {
             output: Vec<u8>,
@@ -138,6 +138,11 @@ pub(crate) fn decode(
                 let len = count as usize;
 
                 if !white {
+                    // If the number of rows is unknown, the output grows on demand.
+                    if self.output.len() < self.idx + len {
+                        self.output.resize(self.idx + len, 0xFF);
+                    }
+
                     self.output[self.idx..self.idx + len].fill(0x00);
                 }
 
@@ -161,11 +166,11 @@ pub(crate) fn decode(
             return None;
         }
 
-        if result.is_err() {
-            decoder.output.truncate(decoder.idx);
+        if result.is_err() || rows == 0 {
+            decoder.output.resize(decoder.idx, 0xFF);
         }
 
-        (decoder.output, 8)
+        (decoder.output, 8, decoder.decoded_rows)
     };
 
     Some(FilterResult {
@@ -175,7 +180,7 @@ pub(crate) fn decode(
             color_space: Some(ImageColorSpace::Gray),
             bits_per_component: bpc,
             width: settings.columns,
-            height: rows,
+            height: if rows == 0 { decoded_rows } else { rows },
         }),
     })
 }
@@ -194,6 +199,23 @@ mod tests {
         let decoded = decode(&[0x35, 0x14], &params, &ImageDecodeParams::default()).unwrap();
 
         assert_eq!(decoded.data.as_ref(), &[0; 8]);
+        assert_eq!(decoded.image_data.unwrap().height, 1);
+    }
+
+    #[test]
+    fn unknown_rows() {
+        let params = Dict::from_bytes(b"<< /K 0 /Columns 8 >>").unwrap();
+
+        let decoded = decode(&[0x35, 0x14], &params, &ImageDecodeParams::default()).unwrap();
+        assert_eq!(decoded.data.as_ref(), &[0; 8]);
+        assert_eq!(decoded.image_data.unwrap().height, 1);
+
+        let image_params = ImageDecodeParams {
+            is_indexed: true,
+            ..Default::default()
+        };
+        let decoded = decode(&[0x35, 0x14], &params, &image_params).unwrap();
+        assert_eq!(decoded.data.as_ref(), &[0]);
         assert_eq!(decoded.image_data.unwrap().height, 1);
     }
 }

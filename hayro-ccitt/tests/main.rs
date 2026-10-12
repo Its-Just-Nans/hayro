@@ -15,7 +15,7 @@ use hayro_ccitt::{DecodeSettings, Decoder, DecoderContext, EncodingMode, decode}
 use std::path::PathBuf;
 
 const G3_1D: EncodingMode = EncodingMode::Group3_1D;
-const G3_2D: EncodingMode = EncodingMode::Group3_2D { k: 2 };
+const G3_2D: EncodingMode = EncodingMode::Group3_2D;
 const G4: EncodingMode = EncodingMode::Group4;
 
 fn tests_dir() -> PathBuf {
@@ -71,15 +71,9 @@ fn check_consumed(
         std::fs::read(&path).unwrap_or_else(|e| panic!("failed to read {}: {e}", path.display()));
     let reference = load_reference(reference);
 
-    let mut settings = DecodeSettings {
-        columns: reference[0].len() as u32,
-        rows: reference.len() as u32,
-        end_of_block: false,
-        end_of_line: false,
-        rows_are_byte_aligned: false,
-        encoding: G4,
-        invert_black: false,
-    };
+    let mut settings = DecodeSettings::new(reference[0].len() as u32, reference.len() as u32);
+    settings.end_of_block = false;
+    settings.encoding = G4;
     configure(&mut settings);
 
     let mut collector = Collector::default();

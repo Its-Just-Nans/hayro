@@ -10,7 +10,7 @@ use hayro_interpret::{
 };
 use hayro_syntax::Pdf;
 use image::{DynamicImage, ImageBuffer};
-use kurbo::{Affine, BezPath, Rect};
+use kurbo::{Affine, BezPath, Rect}; // re-exported in `hayro::kurbo`
 use std::path::PathBuf;
 
 fn main() {

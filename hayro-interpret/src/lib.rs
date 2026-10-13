@@ -59,6 +59,4 @@ pub use interpret::*;
 pub use types::*;
 pub use util::{RectExt, TransformExt};
 pub use x_object::soft_mask::*;
-
-// re-export dependencies
 pub use kurbo;

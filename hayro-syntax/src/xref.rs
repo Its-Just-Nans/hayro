@@ -1087,22 +1087,22 @@ fn parse_metadata(info_dict: &Dict<'_>) -> Metadata {
             .and_then(|c| DateTime::from_bytes(&c)),
         title: info_dict
             .get::<object::String<'_>>(TITLE)
-            .map(|t| t.to_vec()),
+            .map(|t| t.to_vec().into_boxed_slice()),
         author: info_dict
             .get::<object::String<'_>>(AUTHOR)
-            .map(|t| t.to_vec()),
+            .map(|t| t.to_vec().into_boxed_slice()),
         subject: info_dict
             .get::<object::String<'_>>(SUBJECT)
-            .map(|t| t.to_vec()),
+            .map(|t| t.to_vec().into_boxed_slice()),
         keywords: info_dict
             .get::<object::String<'_>>(KEYWORDS)
-            .map(|t| t.to_vec()),
+            .map(|t| t.to_vec().into_boxed_slice()),
         creator: info_dict
             .get::<object::String<'_>>(CREATOR)
-            .map(|t| t.to_vec()),
+            .map(|t| t.to_vec().into_boxed_slice()),
         producer: info_dict
             .get::<object::String<'_>>(PRODUCER)
-            .map(|t| t.to_vec()),
+            .map(|t| t.to_vec().into_boxed_slice()),
     }
 }
 

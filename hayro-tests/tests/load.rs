@@ -668,11 +668,11 @@ fn metadata_in_object_stream() {
             utc_offset_hour: 1,
             utc_offset_minute: 0,
         }),
-        title: Some("Encrypted Metadata".as_bytes().to_vec()),
-        author: Some("Max Mustermann".as_bytes().to_vec()),
+        title: Some("Encrypted Metadata".as_bytes().to_vec().into_boxed_slice()),
+        author: Some("Max Mustermann".as_bytes().to_vec().into_boxed_slice()),
         subject: None,
         keywords: None,
-        creator: Some("Typst 0.14.0".as_bytes().to_vec()),
+        creator: Some("Typst 0.14.0".as_bytes().to_vec().into_boxed_slice()),
         producer: None,
     };
 
